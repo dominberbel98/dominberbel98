@@ -31,7 +31,6 @@ def render(profile: dict) -> str:
     handle = identity["handle"]
     user = identity["name"].split()[0].lower()
 
-    lines: list[str] = []
     parts: list[str] = []
 
     parts.append(
