@@ -51,6 +51,53 @@ def test_summary_best_day(days):
     assert summary["best_day"] == {"date": "2026-08-18", "count": 9}
 
 
+def test_current_streak_counts_multiple_active_days_at_the_end():
+    days = [
+        {"date": "2026-08-01", "count": 0},
+        {"date": "2026-08-02", "count": 2},
+        {"date": "2026-08-03", "count": 5},
+        {"date": "2026-08-04", "count": 1},
+    ]
+    summary = summarise(days)
+    assert summary["current_streak"] == 3
+
+
+def test_current_streak_of_exactly_one():
+    days = [
+        {"date": "2026-08-01", "count": 4},
+        {"date": "2026-08-02", "count": 0},
+        {"date": "2026-08-03", "count": 3},
+    ]
+    summary = summarise(days)
+    assert summary["current_streak"] == 1
+
+
+def test_current_streak_equals_length_when_every_day_is_active():
+    days = [
+        {"date": "2026-08-01", "count": 1},
+        {"date": "2026-08-02", "count": 2},
+        {"date": "2026-08-03", "count": 3},
+    ]
+    summary = summarise(days)
+    assert summary["current_streak"] == len(days)
+
+
+def test_best_day_ties_pick_the_earliest_date():
+    # days llega siempre ordenado cronológicamente (parse_calendar ordena
+    # por fecha); max() se queda con el primer máximo que encuentra, así
+    # que en un empate gana la fecha más temprana. Fijamos ese
+    # comportamiento explícitamente: hoy es determinista pero no estaba
+    # protegido por ningún test.
+    days = [
+        {"date": "2026-08-01", "count": 5},
+        {"date": "2026-08-02", "count": 9},
+        {"date": "2026-08-03", "count": 9},
+        {"date": "2026-08-04", "count": 2},
+    ]
+    summary = summarise(days)
+    assert summary["best_day"] == {"date": "2026-08-02", "count": 9}
+
+
 def test_summary_of_empty_calendar_does_not_crash():
     summary = summarise([])
     assert summary["total"] == 0
