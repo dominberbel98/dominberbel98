@@ -96,6 +96,21 @@ def _stat_row_texts(svg: str) -> list[tuple[float, str]]:
     return [(float(x), content) for x, content in re.findall(pattern, svg)]
 
 
+def _stat_row_tags(svg: str) -> list[tuple[float, str, str]]:
+    """(x, atributos completos, contenido) de cada `<text>` de la fila de métricas.
+
+    A diferencia de `_stat_row_texts`, conserva los atributos del tag para
+    poder comprobar que lleva `textLength`/`lengthAdjust`: sin ellos, la
+    garantía de no-solape depende de que la fuente monoespaciada real del
+    visitante avance exactamente `CHAR_W` px por carácter, algo que no está
+    garantizado (medido con `getBBox()` real: 25.8 px de hueco entre
+    métricas contra los 26 nominales de `METRIC_GAP`, es decir, `CHAR_W` ya
+    subestima ligeramente el glifo real en el único navegador probado).
+    """
+    pattern = rf'<text x="([\d.]+)" y="{STATS_Y}"([^>]*)>([^<]*)</text>'
+    return [(float(x), attrs, content) for x, attrs, content in re.findall(pattern, svg)]
+
+
 def test_no_metric_in_the_stats_row_overflows_the_canvas():
     """Regresión: ninguna métrica de la fila puede rebasar el borde derecho.
 
@@ -188,6 +203,24 @@ def test_no_metric_in_the_stats_row_overlaps_the_next_one():
         f"la última métrica rebasa el lienzo: borde={last_right_edge:.1f}, "
         f"límite={theme.WIDTH_FULL - PAD}"
     )
+
+    # La garantía de no-solape de arriba solo vale si el ancho renderizado
+    # coincide con el estimado por CHAR_W. Sin `textLength`, eso depende de
+    # que la fuente del visitante avance exactamente lo que asume CHAR_W;
+    # con `textLength` + `lengthAdjust="spacingAndGlyphs"` el navegador está
+    # obligado a dibujar el texto en ese ancho exacto, sea cual sea la
+    # fuente instalada.
+    for x, attrs, content in _stat_row_tags(svg):
+        expected_length = round(len(content) * CHAR_W, 1)
+        m = re.search(r'textLength="([\d.]+)"', attrs)
+        assert m, f"{content!r} en x={x} no fija textLength"
+        assert float(m.group(1)) == pytest.approx(expected_length, abs=0.05), (
+            f"{content!r}: textLength={m.group(1)} no coincide con "
+            f"len(cadena)*CHAR_W={expected_length}"
+        )
+        assert 'lengthAdjust="spacingAndGlyphs"' in attrs, (
+            f'{content!r} en x={x} no lleva lengthAdjust="spacingAndGlyphs"'
+        )
 
 
 def test_is_full_width(svg):

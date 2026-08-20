@@ -5,6 +5,20 @@ se renderiza justo debajo en el perfil. La escala por cuantiles evita que el dí
 pico aplaste al resto, que es lo que haría la escala absoluta de GitHub.
 
 Las cifras impresas salen de los datos sin transformar.
+
+Fila de métricas: el ancho de cada etiqueta y cada valor se ESTIMA como
+`len(cadena) * CHAR_W` para calcular dónde empieza el siguiente elemento
+(ver `render()`). Esa estimación por sí sola no garantiza nada: si la fuente
+monoespaciada real del visitante avanza más de `CHAR_W` px por carácter —y
+la pila `theme.MONO` cae a fuentes distintas según el sistema operativo—, el
+hueco entre métricas se estrecha sin que ningún test lo detecte, porque los
+tests de no-solape usan la misma fórmula y la misma constante para medir que
+para posicionar (tautológico). Por eso cada `<text>` de la fila lleva además
+`textLength` fijado a ese mismo ancho estimado y
+`lengthAdjust="spacingAndGlyphs"`: eso obliga al navegador a dibujar el
+texto exactamente en ese ancho sea cual sea la fuente instalada, así que el
+ancho estimado deja de ser una estimación y pasa a ser el ancho real
+(misma técnica que `make_ascii_svg.py` y `make_header.py`).
 """
 
 from __future__ import annotations
@@ -124,19 +138,24 @@ def render(data: dict, weeks: int) -> str:
     # necesita (etiqueta + hueco + valor) y la siguiente empieza donde
     # terminó la anterior, con el hueco entre métricas. Así el ancho de un
     # dato que crece (más días en la ventana, más dígitos en el total...)
-    # nunca puede invadir a la métrica siguiente.
+    # nunca puede invadir a la métrica siguiente — SIEMPRE que el ancho
+    # renderizado coincida con `label_w`/`value_w`. `textLength` +
+    # `lengthAdjust="spacingAndGlyphs"` es lo que convierte esa estimación
+    # en el ancho real (ver docstring del módulo).
     x = PAD
     for label, value in stats:
-        label_w = len(label) * CHAR_W
+        label_w = round(len(label) * CHAR_W, 1)
         value_x = x + label_w + LABEL_VALUE_GAP
-        value_w = len(value) * CHAR_W
+        value_w = round(len(value) * CHAR_W, 1)
         parts.append(
             f'<text x="{x}" y="{STATS_Y}" fill="{theme.MUTED}" '
-            f'font-family="{theme.MONO}" font-size="11">{label}</text>'
+            f'font-family="{theme.MONO}" font-size="11" textLength="{label_w}" '
+            f'lengthAdjust="spacingAndGlyphs">{label}</text>'
         )
         parts.append(
             f'<text x="{value_x}" y="{STATS_Y}" fill="{theme.GREEN}" '
-            f'font-family="{theme.MONO}" font-size="11">{theme.esc(value)}</text>'
+            f'font-family="{theme.MONO}" font-size="11" textLength="{value_w}" '
+            f'lengthAdjust="spacingAndGlyphs">{theme.esc(value)}</text>'
         )
         x = value_x + value_w + METRIC_GAP
     assert x - METRIC_GAP <= W - PAD, "la fila de métricas se sale del lienzo"
