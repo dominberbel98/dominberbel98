@@ -9,6 +9,7 @@ from scripts.render_heatmap_svg import (
     LEGEND_Y,
     PAD,
     STATS_Y,
+    legend_ranges,
     level,
     render,
     thresholds,
@@ -230,6 +231,20 @@ def test_no_metric_in_the_stats_row_overlaps_the_next_one():
         assert 'lengthAdjust="spacingAndGlyphs"' in attrs, (
             f'{content!r} en x={x} no lleva lengthAdjust="spacingAndGlyphs"'
         )
+
+
+def test_legend_ranges_prints_bare_numbers_for_consecutive_thresholds():
+    """Cuantiles pegados (los reales: 1, 2, 3, 4) hacen que cada tramo sea un
+    único valor. Debe leerse como el número solo — "1", "2"... — nunca como
+    "1-1", que lee como un error de formato aunque sea aritméticamente
+    correcto.
+    """
+    assert legend_ranges([1, 2, 3, 4]) == "0, 1, 2, 3, 4, 5+ commits/day"
+
+
+def test_legend_ranges_keeps_real_spans_as_a_range():
+    """Umbrales separados sí deben seguir imprimiéndose como rango (p.ej. "2-4")."""
+    assert legend_ranges([1, 4, 6, 10]) == "0, 1, 2-4, 5-6, 7-10, 11+ commits/day"
 
 
 def test_legend_texts_pin_their_rendered_width_with_textLength(svg):

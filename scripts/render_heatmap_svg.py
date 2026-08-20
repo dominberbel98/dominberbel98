@@ -76,6 +76,28 @@ def level(count: int, th: list[int]) -> int:
     return len(theme.HEAT_LEVELS) - 1
 
 
+def range_label(lo: int, hi: int) -> str:
+    """Etiqueta de un tramo de la leyenda.
+
+    Con cuantiles pegados (frecuente: Q20=Q40=1 con series cortas o de baja
+    varianza) el tramo real es un único valor. Imprimirlo como "1-1" es
+    aritméticamente correcto pero lee como un error de formato; con `lo`
+    y `hi` iguales se imprime el número solo.
+    """
+    return str(lo) if lo == hi else f"{lo}-{hi}"
+
+
+def legend_ranges(th: list[int]) -> str:
+    """Texto completo de rangos de la leyenda a partir de los cuatro umbrales."""
+    spans = ", ".join([
+        range_label(1, th[0]),
+        range_label(th[0] + 1, th[1]),
+        range_label(th[1] + 1, th[2]),
+        range_label(th[2] + 1, th[3]),
+    ])
+    return f"0, {spans}, {th[3] + 1}+ commits/day"
+
+
 def window(days: list[dict], weeks: int) -> list[dict]:
     """Últimos `weeks × 7` días. Si hay menos, se devuelven todos."""
     return days[-(weeks * 7):]
@@ -180,10 +202,7 @@ def render(data: dict, weeks: int) -> str:
             f'rx="2" fill="{colour}"/>'
         )
     swatches_w = (len(theme.HEAT_LEVELS) - 1) * 16 + 12
-    ranges = (
-        f'0, 1-{th[0]}, {th[0] + 1}-{th[1]}, {th[1] + 1}-{th[2]}, '
-        f'{th[2] + 1}-{th[3]}, {th[3] + 1}+ commits/day'
-    )
+    ranges = legend_ranges(th)
     ranges_label = f"more · {ranges}"
     ranges_w = round(len(ranges_label) * CHAR_W, 1)
     ranges_x = swatches_x + swatches_w + METRIC_GAP
