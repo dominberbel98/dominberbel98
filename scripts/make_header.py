@@ -29,7 +29,9 @@ CHAR_W = 9.6
 
 
 def render(profile: dict) -> str:
-    site = profile["identity"]["site"]
+    identity = profile["identity"]
+    name = identity["name"]
+    site = identity["site"]
     url = f"https://{site}"
     command = f"open {url}"
     # Caracteres visibles del prompt completo: el prefijo "> " (2) más el
@@ -70,7 +72,7 @@ def render(profile: dict) -> str:
     ])
 
     return "".join([
-        theme.svg_open(W, H, f"Domingo Berbel — {site}"),
+        theme.svg_open(W, H, f"{name} — {site}"),
         theme.defs(),
         theme.style(css),
         theme.background(W, H),

@@ -23,6 +23,7 @@ MODE = "drwxr-xr-x"
 
 
 def render(profile: dict) -> str:
+    identity = profile["identity"]
     items = profile["projects"]
     parts = [theme.prompt(PAD, 30, "ls -la projects/", size=14)]
 
@@ -55,7 +56,7 @@ def render(profile: dict) -> str:
     ])
 
     return "".join([
-        theme.svg_open(W, H, "Proyectos destacados de Domingo Berbel"),
+        theme.svg_open(W, H, f"Proyectos destacados de {identity['name']}"),
         theme.defs(),
         theme.style(css),
         theme.background(W, H),

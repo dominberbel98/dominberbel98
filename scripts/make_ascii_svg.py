@@ -12,6 +12,7 @@ from scripts import theme
 
 ROOT = Path(__file__).resolve().parent.parent
 MATRIX = ROOT / "data" / "ascii-matrix.json"
+PROFILE = ROOT / "data" / "profile.json"
 OUT = ROOT / "assets" / "ascii-portrait.svg"
 
 SIZE = theme.WIDTH_HALF   # 420
@@ -49,8 +50,9 @@ def row_runs(row: list[float]) -> list[tuple[int, str]]:
     return runs
 
 
-def render(matrix: dict) -> str:
+def render(matrix: dict, profile: dict) -> str:
     rows = matrix["ink"]
+    identity = profile["identity"]
 
     css = "".join([
         "@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}",
@@ -72,7 +74,7 @@ def render(matrix: dict) -> str:
         )
 
     return "".join([
-        theme.svg_open(SIZE, SIZE, "Retrato ASCII de Domingo Berbel"),
+        theme.svg_open(SIZE, SIZE, f"Retrato ASCII de {identity['name']}"),
         theme.defs(),
         theme.style(css),
         theme.background(SIZE, SIZE),
@@ -84,7 +86,8 @@ def render(matrix: dict) -> str:
 
 def main() -> None:
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
-    OUT.write_text(render(matrix), encoding="utf-8")
+    profile = json.loads(PROFILE.read_text(encoding="utf-8"))
+    OUT.write_text(render(matrix, profile), encoding="utf-8")
     size_kb = OUT.stat().st_size / 1024
     print(f"escrito {OUT.relative_to(ROOT)} ({size_kb:.1f} KB)")
 

@@ -27,6 +27,7 @@ STAGGER_MS = 90
 
 
 def render(profile: dict) -> str:
+    identity = profile["identity"]
     items = profile["stack"]
     parts = [theme.prompt(PAD, 30, "cat stack.txt", size=14)]
 
@@ -54,7 +55,7 @@ def render(profile: dict) -> str:
     ])
 
     return "".join([
-        theme.svg_open(W, H, "Stack técnico de Domingo Berbel"),
+        theme.svg_open(W, H, f"Stack técnico de {identity['name']}"),
         theme.defs(),
         theme.style(css),
         theme.background(W, H),
