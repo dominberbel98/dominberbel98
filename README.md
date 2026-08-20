@@ -13,7 +13,7 @@
 <table>
 <tr>
 <td width="420"><img src="./assets/ascii-portrait.svg" width="420" alt="Retrato ASCII de Domingo Berbel"></td>
-<td width="420"><img src="./assets/info-card.svg" width="420" alt="Data Scientist en Data Equity, Madrid. Python, SQL, PySpark, Azure. RAG, agentes LLM, MLOps. MSc Data Science UCM."></td>
+<td width="420"><img src="./assets/info-card.svg" width="420" alt="Data Scientist en Data Equity desde 2025-10, Madrid. Python, SQL, PySpark, Azure. RAG, agentes LLM, MLOps. MSc Data Science UCM. Español nativo, inglés B2."></td>
 </tr>
 </table>
 
@@ -23,7 +23,7 @@
 
 <br>
 
-<img src="./assets/projects.svg" width="840" alt="Proyectos: agentic-rag-portfolio (RAG en producción sobre Azure Container Apps), tfm-ucm-rag (recomendador turístico, máxima nota), pump-it-up (top 2907 de más de 18.000), ocr-albaranes (clasificación documental en producción)">
+<img src="./assets/projects.svg" width="840" alt="Proyectos: agentic-rag-portfolio (RAG en producción sobre Azure Container Apps), tfm-ucm-rag (recomendador turístico, máxima nota, 3ª posición en becas UCM), pump-it-up (top 2907 de más de 18.000), ocr-albaranes (clasificación documental en producción)">
 
 <br>
 
