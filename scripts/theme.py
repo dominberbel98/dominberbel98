@@ -1,7 +1,7 @@
-"""Paleta, tipografía y helpers de SVG compartidos por los cinco generadores.
+"""Paleta, tipografía y helpers de SVG compartidos por los seis generadores.
 
 La paleta sale de portfolio-chatbot/frontend/tailwind.config.js y src/styles.css.
-Cambiar un color aquí lo cambia en los cinco SVG a la vez.
+Cambiar un color aquí lo cambia en los seis SVG a la vez.
 
 Convención de animación: el estado FINAL es el valor natural del elemento y la
 animación va del estado inicial a él con `animation-fill-mode: both`. Si el
