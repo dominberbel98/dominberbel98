@@ -1,7 +1,9 @@
+import re
+
 import pytest
 
 from scripts import theme
-from scripts.render_heatmap_svg import level, render, thresholds, window
+from scripts.render_heatmap_svg import CHAR_W, PAD, STATS_Y, level, render, thresholds, window
 
 
 def test_thresholds_are_non_decreasing():
@@ -78,11 +80,56 @@ def test_prints_the_real_date_range(svg):
 
 def test_grid_fits_inside_the_canvas(svg):
     """53 columnas a paso 14 terminan en x=788, dentro de los 840."""
-    import re
-
     xs = [float(x) for x in re.findall(r'<rect class="c" x="([\d.]+)"', svg)]
     assert xs, "no se ha dibujado ninguna celda"
     assert max(xs) + 12 <= theme.WIDTH_FULL - 16
+
+
+def _stat_row_texts(svg: str) -> list[tuple[float, str]]:
+    """(x, contenido) de cada `<text>` de la fila de métricas (y=STATS_Y).
+
+    Incluye tanto las etiquetas ("best day") como los valores ("47 · 08-17"):
+    ambos son texto real que puede desbordar el lienzo.
+    """
+    pattern = rf'<text x="([\d.]+)" y="{STATS_Y}"[^>]*>([^<]*)</text>'
+    return [(float(x), content) for x, content in re.findall(pattern, svg)]
+
+
+def test_no_metric_in_the_stats_row_overflows_the_canvas():
+    """Regresión: ninguna métrica de la fila puede rebasar el borde derecho.
+
+    Cubre la clase de fallo entera, no solo `best day`: recorre TODAS las
+    métricas de la fila, estima el borde derecho de cada una a partir de su
+    x real en el SVG y su longitud en caracteres (a CHAR_W px/carácter,
+    importado del módulo, nunca repetido como número suelto aquí), y exige
+    que ninguna rebase `W - PAD`.
+
+    Con `SLOT_W=164` y el formato largo `"{count} on {date}"` este test
+    falla porque el valor de `best day` (17 caracteres) empieza demasiado a
+    la derecha para caber. Tras estrechar los huecos a `SLOT_W=156` y
+    compactar la fecha a `"{count} · {mm-dd}"` (10 caracteres), pasa.
+    """
+    data = dict(DATA, best_day={"date": "2026-08-17", "count": 47})
+    svg = render(data, weeks=53)
+    texts = _stat_row_texts(svg)
+    assert texts, "no se ha encontrado ningún texto en la fila de métricas"
+    for x, content in texts:
+        right_edge = x + len(content) * CHAR_W
+        assert right_edge <= theme.WIDTH_FULL - PAD, (
+            f"{content!r} en x={x} rebasa el lienzo "
+            f"(borde estimado={right_edge:.1f}, límite={theme.WIDTH_FULL - PAD})"
+        )
+
+
+def test_stats_row_still_fits_with_a_three_digit_best_day_count():
+    """No debe volver a romperse si algún día `best_day.count` llega a 3 cifras."""
+    data = dict(DATA, best_day={"date": "2026-12-31", "count": 999})
+    svg = render(data, weeks=53)
+    for x, content in _stat_row_texts(svg):
+        right_edge = x + len(content) * CHAR_W
+        assert right_edge <= theme.WIDTH_FULL - PAD, (
+            f"{content!r} en x={x} rebasa el lienzo con un best_day de 3 cifras"
+        )
 
 
 def test_is_full_width(svg):
