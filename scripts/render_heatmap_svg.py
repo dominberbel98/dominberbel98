@@ -160,24 +160,38 @@ def render(data: dict, weeks: int) -> str:
         x = value_x + value_w + METRIC_GAP
     assert x - METRIC_GAP <= W - PAD, "la fila de métricas se sale del lienzo"
 
-    # Leyenda con los recuentos reales de cada tono.
+    # Leyenda con los recuentos reales de cada tono. Mismo esquema que la fila
+    # de métricas de arriba: posiciones derivadas del contenido en vez de
+    # offsets fijos (el patrón que causó los dos defectos consecutivos de la
+    # fila de métricas), reutilizando LABEL_VALUE_GAP/METRIC_GAP en vez de
+    # inventar huecos nuevos, y textLength en cada <text> para que el ancho
+    # renderizado sea el ancho real, no una estimación.
+    less_label = "less"
+    less_w = round(len(less_label) * CHAR_W, 1)
     parts.append(
         f'<text x="{PAD}" y="{LEGEND_Y}" fill="{theme.MUTED}" '
-        f'font-family="{theme.MONO}" font-size="10">less</text>'
+        f'font-family="{theme.MONO}" font-size="10" textLength="{less_w}" '
+        f'lengthAdjust="spacingAndGlyphs">{less_label}</text>'
     )
+    swatches_x = PAD + less_w + LABEL_VALUE_GAP
     for i, colour in enumerate(theme.HEAT_LEVELS):
         parts.append(
-            f'<rect x="{PAD + 38 + i * 16}" y="{LEGEND_Y - 10}" width="12" height="12" '
+            f'<rect x="{swatches_x + i * 16}" y="{LEGEND_Y - 10}" width="12" height="12" '
             f'rx="2" fill="{colour}"/>'
         )
+    swatches_w = (len(theme.HEAT_LEVELS) - 1) * 16 + 12
     ranges = (
         f'0, 1-{th[0]}, {th[0] + 1}-{th[1]}, {th[1] + 1}-{th[2]}, '
         f'{th[2] + 1}-{th[3]}, {th[3] + 1}+ commits/day'
     )
+    ranges_label = f"more · {ranges}"
+    ranges_w = round(len(ranges_label) * CHAR_W, 1)
+    ranges_x = swatches_x + swatches_w + METRIC_GAP
     parts.append(
-        f'<text x="{PAD + 38 + len(theme.HEAT_LEVELS) * 16 + 6}" y="{LEGEND_Y}" '
-        f'fill="{theme.MUTED}" font-family="{theme.MONO}" font-size="10">'
-        f'more &#183; {theme.esc(ranges)}</text>'
+        f'<text x="{ranges_x}" y="{LEGEND_Y}" '
+        f'fill="{theme.MUTED}" font-family="{theme.MONO}" font-size="10" '
+        f'textLength="{ranges_w}" lengthAdjust="spacingAndGlyphs">'
+        f'more · {theme.esc(ranges)}</text>'
     )
 
     css = "".join([

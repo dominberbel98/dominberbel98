@@ -4,7 +4,16 @@ from datetime import date, timedelta
 import pytest
 
 from scripts import theme
-from scripts.render_heatmap_svg import CHAR_W, PAD, STATS_Y, level, render, thresholds, window
+from scripts.render_heatmap_svg import (
+    CHAR_W,
+    LEGEND_Y,
+    PAD,
+    STATS_Y,
+    level,
+    render,
+    thresholds,
+    window,
+)
 
 
 def test_thresholds_are_non_decreasing():
@@ -218,6 +227,28 @@ def test_no_metric_in_the_stats_row_overlaps_the_next_one():
             f"{content!r}: textLength={m.group(1)} no coincide con "
             f"len(cadena)*CHAR_W={expected_length}"
         )
+        assert 'lengthAdjust="spacingAndGlyphs"' in attrs, (
+            f'{content!r} en x={x} no lleva lengthAdjust="spacingAndGlyphs"'
+        )
+
+
+def test_legend_texts_pin_their_rendered_width_with_textLength(svg):
+    """Misma garantía que la fila de métricas, aplicada a la leyenda.
+
+    La leyenda posicionaba `less` y `more · rangos` con offsets fijos —el
+    mismo patrón que ya causó dos defectos consecutivos en la fila de
+    métricas (desbordamiento del lienzo y solape entre `active days` y
+    `longest`)—. Debe seguir el mismo esquema: posiciones derivadas del
+    contenido y `textLength` fijando el ancho renderizado, para que la
+    garantía de no-solape no dependa de que la fuente del visitante avance
+    exactamente lo que estima `CHAR_W`.
+    """
+    pattern = rf'<text x="([\d.]+)" y="{LEGEND_Y}"([^>]*)>([^<]*)</text>'
+    tags = re.findall(pattern, svg)
+    assert tags, "no se ha encontrado ningún texto en la leyenda"
+    for x, attrs, content in tags:
+        m = re.search(r'textLength="([\d.]+)"', attrs)
+        assert m, f"{content!r} en x={x} no fija textLength"
         assert 'lengthAdjust="spacingAndGlyphs"' in attrs, (
             f'{content!r} en x={x} no lleva lengthAdjust="spacingAndGlyphs"'
         )
