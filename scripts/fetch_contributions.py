@@ -7,7 +7,9 @@ renderizador del heatmap.
 from __future__ import annotations
 
 import json
+import os
 import re
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -106,6 +108,26 @@ def _check_calendar_is_complete(days: list[dict]) -> None:
         )
 
 
+def _write_atomic(path: Path, content: str) -> None:
+    """Escribe `content` en `path` de forma atómica.
+
+    Escribe primero a un fichero temporal en el mismo directorio (mismo
+    sistema de ficheros, para que el rename sea atómico) y lo renombra con
+    `os.replace()`. Si el proceso muere a mitad de escritura, `path` sigue
+    intacto con su contenido anterior en vez de quedar truncado.
+    """
+    fd, tmp_name = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            tmp_file.write(content)
+        os.replace(tmp_name, path)
+    except BaseException:
+        os.unlink(tmp_name)
+        raise
+
+
 def main() -> None:
     profile = json.loads(PROFILE.read_text(encoding="utf-8"))
     handle = profile["identity"]["handle"]
@@ -126,7 +148,7 @@ def main() -> None:
         "days": days,
         **summarise(days),
     }
-    OUT.write_text(json.dumps(payload, indent=1), encoding="utf-8")
+    _write_atomic(OUT, json.dumps(payload, indent=1))
     print(f"escrito {OUT.relative_to(ROOT)}: {payload['total']} contribuciones")
 
 
