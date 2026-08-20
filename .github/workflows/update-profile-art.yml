@@ -1,0 +1,33 @@
+name: update-profile-art
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-heatmap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias mínimas
+        run: pip install -r scripts/requirements-ci.txt
+
+      - name: Raspar el calendario de contribuciones
+        run: python -m scripts.fetch_contributions
+
+      - name: Regenerar el heatmap
+        run: python -m scripts.render_heatmap_svg
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: refrescar heatmap de contribuciones [skip ci]"
+          file_pattern: "assets/contrib-heatmap.svg data/contributions.json"
