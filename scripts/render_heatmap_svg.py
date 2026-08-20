@@ -180,7 +180,18 @@ def render(data: dict, weeks: int) -> str:
             f'lengthAdjust="spacingAndGlyphs">{theme.esc(value)}</text>'
         )
         x = value_x + value_w + METRIC_GAP
-    assert x - METRIC_GAP <= W - PAD, "la fila de métricas se sale del lienzo"
+    last_right_edge = x - METRIC_GAP
+    limit = W - PAD
+    if last_right_edge > limit:
+        # Guarda explícita, no `assert`: `python -O` elimina los `assert`
+        # (`__debug__` pasa a False), así que esta red de seguridad no puede
+        # depender de uno. La condición es la misma que antes, solo cambia
+        # el mecanismo: una excepción normal que no desaparece nunca.
+        raise ValueError(
+            f"la fila de métricas se sale del lienzo: la métrica "
+            f"{stats[-1][0]!r} termina en x={last_right_edge:.1f}, por "
+            f"encima del límite x={limit} (W={W}, PAD={PAD})"
+        )
 
     # Leyenda con los recuentos reales de cada tono. Mismo esquema que la fila
     # de métricas de arriba: posiciones derivadas del contenido en vez de

@@ -158,6 +158,26 @@ def test_stats_row_still_fits_with_a_three_digit_best_day_count():
         )
 
 
+def test_stats_row_guard_survives_python_dash_o():
+    """La guarda de desbordamiento no puede depender de `assert`.
+
+    Los `assert` se eliminan al ejecutar con `python -O`, así que una guarda
+    basada en `assert` no protege nada en producción bajo ese modo. Debe ser
+    una comprobación explícita que lance una excepción normal —no
+    `AssertionError` de un `assert` optimizable— con un mensaje claro: qué
+    métrica, qué borde calculado y qué límite del lienzo.
+    """
+    data = dict(DATA, total=10**80)  # cientos de dígitos: desborda el lienzo
+    with pytest.raises(Exception) as exc_info:
+        render(data, weeks=53)
+    assert not isinstance(exc_info.value, AssertionError), (
+        "la guarda sigue siendo un assert: desaparece con python -O"
+    )
+    message = str(exc_info.value)
+    assert "best day" in message, "el mensaje debe nombrar la métrica"
+    assert str(theme.WIDTH_FULL - PAD) in message, "el mensaje debe nombrar el límite del lienzo"
+
+
 def test_no_metric_in_the_stats_row_overlaps_the_next_one():
     """La propiedad que de verdad importa: ninguna métrica pisa a la siguiente.
 
