@@ -1,0 +1,179 @@
+"""contributions.json → assets/contrib-heatmap.svg.
+
+Ventana de 53 semanas: el año completo, igual que el grafo propio de GitHub que
+se renderiza justo debajo en el perfil. La escala por cuantiles evita que el día
+pico aplaste al resto, que es lo que haría la escala absoluta de GitHub.
+
+Las cifras impresas salen de los datos sin transformar.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import date
+from pathlib import Path
+
+from scripts import theme
+
+ROOT = Path(__file__).resolve().parent.parent
+PROFILE = ROOT / "data" / "profile.json"
+DATA = ROOT / "data" / "contributions.json"
+OUT = ROOT / "assets" / "contrib-heatmap.svg"
+
+W = theme.WIDTH_FULL   # 840
+H = 220
+PAD = 16
+GRID_X = 48
+GRID_Y = 60
+CELL = 12
+GAP = 2
+PITCH = CELL + GAP     # 14
+STATS_Y = 182
+SLOT_W = 164
+VALUE_DX = 100
+LEGEND_Y = 206
+CELL_DELAY_MS = 8
+
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def thresholds(counts: list[int]) -> list[int]:
+    """Cuantiles 20/40/60/80 sobre los días CON actividad."""
+    lit = sorted(c for c in counts if c > 0)
+    if not lit:
+        return [1, 2, 3, 4]
+
+    def quantile(p: float) -> int:
+        idx = min(len(lit) - 1, round(p * (len(lit) - 1)))
+        return lit[int(idx)]
+
+    return [quantile(0.2), quantile(0.4), quantile(0.6), quantile(0.8)]
+
+
+def level(count: int, th: list[int]) -> int:
+    """0 = sin actividad; 1..5 = cuantiles crecientes."""
+    if count <= 0:
+        return 0
+    for i, limit in enumerate(th):
+        if count <= limit:
+            return i + 1
+    return len(theme.HEAT_LEVELS) - 1
+
+
+def window(days: list[dict], weeks: int) -> list[dict]:
+    """Últimos `weeks × 7` días. Si hay menos, se devuelven todos."""
+    return days[-(weeks * 7):]
+
+
+def render(data: dict, weeks: int) -> str:
+    days = window(data["days"], weeks)
+    th = thresholds([d["count"] for d in days])
+
+    parts = [
+        f'<text x="{PAD}" y="26" font-family="{theme.MONO}" font-size="13">'
+        f'<tspan fill="{theme.AMBER}">&gt; </tspan>'
+        f'<tspan fill="{theme.GREEN}">git log --graph </tspan>'
+        f'<tspan fill="{theme.MUTED}">'
+        f'{theme.esc(data["first_date"])} .. {theme.esc(data["last_date"])}</tspan>'
+        "</text>"
+    ]
+
+    cells: list[str] = []
+    month_labels: list[str] = []
+    seen_months: set[str] = set()
+
+    for i, day in enumerate(days):
+        col, row = divmod(i, 7)
+        x = GRID_X + col * PITCH
+        y = GRID_Y + row * PITCH
+        colour = theme.HEAT_LEVELS[level(day["count"], th)]
+        delay = (col + row) * CELL_DELAY_MS
+        cells.append(
+            f'<rect class="c" x="{x}" y="{y}" width="{CELL}" height="{CELL}" rx="2" '
+            f'fill="{colour}" style="animation-delay:{delay}ms"/>'
+        )
+        parsed = date.fromisoformat(day["date"])
+        key = f"{parsed.year}-{parsed.month}"
+        if row == 0 and key not in seen_months:
+            seen_months.add(key)
+            month_labels.append(
+                f'<text x="{x}" y="52" fill="{theme.MUTED}" '
+                f'font-family="{theme.MONO}" font-size="9">'
+                f"{MONTHS[parsed.month - 1]}</text>"
+            )
+
+    for row, label in ((1, "Mon"), (3, "Wed"), (5, "Fri")):
+        parts.append(
+            f'<text x="{PAD}" y="{GRID_Y + row * PITCH + 9}" fill="{theme.MUTED}" '
+            f'font-family="{theme.MONO}" font-size="9">{label}</text>'
+        )
+
+    parts.extend(month_labels)
+    parts.append(f'<g filter="url(#bloom)">{"".join(cells)}</g>')
+
+    stats = [
+        ("total", str(data["total"])),
+        ("active days", f'{data["active_days"]} / {len(days)}'),
+        ("longest", f'{data["longest_streak"]} d'),
+        ("current", f'{data["current_streak"]} d'),
+        ("best day", f'{data["best_day"]["count"]} on {data["best_day"]["date"]}'),
+    ]
+    for i, (label, value) in enumerate(stats):
+        x = PAD + i * SLOT_W
+        parts.append(
+            f'<text x="{x}" y="{STATS_Y}" fill="{theme.MUTED}" '
+            f'font-family="{theme.MONO}" font-size="11">{label}</text>'
+        )
+        parts.append(
+            f'<text x="{x + VALUE_DX}" y="{STATS_Y}" fill="{theme.GREEN}" '
+            f'font-family="{theme.MONO}" font-size="11">{theme.esc(value)}</text>'
+        )
+
+    # Leyenda con los recuentos reales de cada tono.
+    parts.append(
+        f'<text x="{PAD}" y="{LEGEND_Y}" fill="{theme.MUTED}" '
+        f'font-family="{theme.MONO}" font-size="10">less</text>'
+    )
+    for i, colour in enumerate(theme.HEAT_LEVELS):
+        parts.append(
+            f'<rect x="{PAD + 38 + i * 16}" y="{LEGEND_Y - 10}" width="12" height="12" '
+            f'rx="2" fill="{colour}"/>'
+        )
+    ranges = (
+        f'0, 1-{th[0]}, {th[0] + 1}-{th[1]}, {th[1] + 1}-{th[2]}, '
+        f'{th[2] + 1}-{th[3]}, {th[3] + 1}+ commits/day'
+    )
+    parts.append(
+        f'<text x="{PAD + 38 + len(theme.HEAT_LEVELS) * 16 + 6}" y="{LEGEND_Y}" '
+        f'fill="{theme.MUTED}" font-family="{theme.MONO}" font-size="10">'
+        f'more &#183; {theme.esc(ranges)}</text>'
+    )
+
+    css = "".join([
+        "@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}",
+        ".c{transform-box:fill-box;transform-origin:center;"
+        "animation:pop 320ms ease-out both}",
+        theme.FLICKER_CSS,
+    ])
+
+    return "".join([
+        theme.svg_open(W, H, f"Contribuciones de GitHub: {data['total']} en el periodo"),
+        theme.defs(),
+        theme.style(css),
+        theme.background(W, H),
+        f'<g class="flick">{"".join(parts)}</g>',
+        theme.scanlines(W, H),
+        theme.svg_close(),
+    ])
+
+
+def main() -> None:
+    profile = json.loads(PROFILE.read_text(encoding="utf-8"))
+    data = json.loads(DATA.read_text(encoding="utf-8"))
+    OUT.write_text(render(data, profile["heatmap"]["weeks"]), encoding="utf-8")
+    print(f"escrito {OUT.relative_to(ROOT)}: {data['total']} contribuciones")
+
+
+if __name__ == "__main__":
+    main()
