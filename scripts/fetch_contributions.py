@@ -21,6 +21,14 @@ OUT = ROOT / "data" / "contributions.json"
 URL = "https://github.com/users/{handle}/contributions"
 LEADING_INT = re.compile(r"\s*([\d,]+)")
 
+# El calendario de GitHub cubre siempre en torno a 365 días. Un resultado muy
+# por debajo indica que el parseo se ha roto (p. ej. GitHub cambió el markup
+# y devolvió un 200 OK con contenido inservible), no que el usuario esté
+# inactivo: la inactividad se refleja en `total`/`active_days`, no en cuántos
+# días se parsearon. 300 deja margen para variaciones de la ventana sin
+# tragarse un parseo roto.
+MIN_EXPECTED_DAYS = 300
+
 
 def parse_calendar(html: str) -> list[dict]:
     """Extrae [{"date", "count"}] del HTML del calendario, ordenado por fecha."""
@@ -80,6 +88,24 @@ def summarise(days: list[dict]) -> dict:
     }
 
 
+def _check_calendar_is_complete(days: list[dict]) -> None:
+    """Aborta si se han parseado muy pocos días.
+
+    Cubre el caso de fallo parcial silencioso: un 200 OK cuyo contenido ya
+    no coincide con el markup que espera `parse_calendar` (GitHub cambió el
+    HTML, devolvió una página vacía, etc.) no lanza ninguna excepción de
+    red, pero produce una lista de días casi vacía. Sin esta comprobación,
+    ese resultado se escribiría igualmente, machacando el último dato bueno.
+    """
+    if len(days) < MIN_EXPECTED_DAYS:
+        raise SystemExit(
+            f"fetch_contributions: solo se parsearon {len(days)} días "
+            f"(se esperaban al menos {MIN_EXPECTED_DAYS}, de un calendario "
+            f"de ~365). El markup de GitHub puede haber cambiado. "
+            f"No se ha sobrescrito {OUT.relative_to(ROOT)}."
+        )
+
+
 def main() -> None:
     profile = json.loads(PROFILE.read_text(encoding="utf-8"))
     handle = profile["identity"]["handle"]
@@ -92,6 +118,8 @@ def main() -> None:
     response.raise_for_status()
 
     days = parse_calendar(response.text)
+    _check_calendar_is_complete(days)
+
     payload = {
         "handle": handle,
         "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

@@ -55,3 +55,25 @@ def test_summary_of_empty_calendar_does_not_crash():
     summary = summarise([])
     assert summary["total"] == 0
     assert summary["best_day"]["count"] == 0
+
+
+def test_aborts_when_parsed_calendar_is_incomplete():
+    from scripts.fetch_contributions import _check_calendar_is_complete
+
+    html = """
+    <table class="ContributionCalendar-grid">
+      <tbody>
+        <tr>
+          <td class="ContributionCalendar-day" data-date="2026-08-19" data-level="1" id="c-1"></td>
+          <td class="ContributionCalendar-day" data-date="2026-08-20" data-level="0" id="c-2"></td>
+        </tr>
+      </tbody>
+    </table>
+    <tool-tip for="c-1">1 contribution on August 19th.</tool-tip>
+    <tool-tip for="c-2">No contributions on August 20th.</tool-tip>
+    """
+    few_days = parse_calendar(html)
+    assert len(few_days) == 2  # muy por debajo de un año de calendario
+
+    with pytest.raises(SystemExit):
+        _check_calendar_is_complete(few_days)
