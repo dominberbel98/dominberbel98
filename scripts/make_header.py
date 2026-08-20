@@ -19,15 +19,27 @@ W = theme.WIDTH_FULL
 H = 96
 PAD = 16
 
+# Ancho asumido por carácter a font-size 16 con la pila monoespaciada del
+# sistema. No hace falta que sea exacto para ninguna fuente concreta: solo se
+# usa para calcular el textLength que se le impone al <text> del prompt, así
+# que el ancho renderizado real coincide siempre con este valor sea cual sea
+# la fuente que tenga instalada el visitante (misma técnica que usa
+# make_ascii_svg.py para las filas del retrato ASCII).
+CHAR_W = 9.6
+
 
 def render(profile: dict) -> str:
     site = profile["identity"]["site"]
     url = f"https://{site}"
     command = f"open {url}"
+    # Caracteres visibles del prompt completo: el prefijo "> " (2) más el
+    # comando. Determina tanto los steps() del tecleo como el textLength.
+    prompt_chars = len("> ") + len(command)
+    text_length = round(prompt_chars * CHAR_W, 1)
 
     css = "".join([
         "@keyframes type{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}",
-        f".type{{animation:type 1.1s steps({len(command) + 2}, end) both}}",
+        f".type{{animation:type 1.1s steps({prompt_chars}, end) both}}",
         "@keyframes enter{from{opacity:0;transform:translateX(-6px)}"
         "to{opacity:1;transform:translateX(0)}}",
         ".ln{animation:enter 420ms cubic-bezier(.2,.8,.2,1) both}",
@@ -38,7 +50,8 @@ def render(profile: dict) -> str:
 
     prompt_line = (
         f'<text class="type" x="{PAD}" y="34" font-family="{theme.MONO}" '
-        f'font-size="16" xml:space="preserve">'
+        f'font-size="16" textLength="{text_length}" '
+        f'lengthAdjust="spacingAndGlyphs" xml:space="preserve">'
         f'<tspan fill="{theme.AMBER}">&gt; </tspan>'
         f'<tspan fill="{theme.GREEN}">open </tspan>'
         f'<tspan fill="{theme.CYAN}">{theme.esc(url)}</tspan>'
@@ -47,7 +60,7 @@ def render(profile: dict) -> str:
 
     body = "".join([
         prompt_line,
-        theme.cursor(PAD + 10 * len(command) + 6, 21, w=9, h=17),
+        theme.cursor(PAD + text_length + 6, 21, w=9, h=17),
         f'<text class="ln l0" x="{PAD}" y="62" fill="{theme.GREEN}" '
         f'font-family="{theme.MONO}" font-size="13">'
         f'{theme.esc(profile["headline"]["en"])}</text>',
