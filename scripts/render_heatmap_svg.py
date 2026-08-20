@@ -29,8 +29,8 @@ CELL = 12
 GAP = 2
 PITCH = CELL + GAP     # 14
 STATS_Y = 182
-SLOT_W = 156
-VALUE_DX = 100
+LABEL_VALUE_GAP = 8    # px entre la etiqueta de una métrica y su valor
+METRIC_GAP = 26        # px entre el valor de una métrica y la etiqueta siguiente
 LEGEND_Y = 206
 CHAR_W = 6.6           # avance aproximado por carácter a font-size 11 (MONO)
 CELL_DELAY_MS = 8
@@ -120,12 +120,16 @@ def render(data: dict, weeks: int) -> str:
         ("current", f'{data["current_streak"]} d'),
         ("best day", f'{data["best_day"]["count"]} · {data["best_day"]["date"][5:]}'),
     ]
-    for i, (label, value) in enumerate(stats):
-        x = PAD + i * SLOT_W
-        value_x = x + VALUE_DX
-        assert value_x + len(value) * CHAR_W <= W - PAD, (
-            f"la métrica {label!r} se sale del lienzo: {value!r}"
-        )
+    # Layout derivado del contenido: cada métrica ocupa exactamente lo que
+    # necesita (etiqueta + hueco + valor) y la siguiente empieza donde
+    # terminó la anterior, con el hueco entre métricas. Así el ancho de un
+    # dato que crece (más días en la ventana, más dígitos en el total...)
+    # nunca puede invadir a la métrica siguiente.
+    x = PAD
+    for label, value in stats:
+        label_w = len(label) * CHAR_W
+        value_x = x + label_w + LABEL_VALUE_GAP
+        value_w = len(value) * CHAR_W
         parts.append(
             f'<text x="{x}" y="{STATS_Y}" fill="{theme.MUTED}" '
             f'font-family="{theme.MONO}" font-size="11">{label}</text>'
@@ -134,6 +138,8 @@ def render(data: dict, weeks: int) -> str:
             f'<text x="{value_x}" y="{STATS_Y}" fill="{theme.GREEN}" '
             f'font-family="{theme.MONO}" font-size="11">{theme.esc(value)}</text>'
         )
+        x = value_x + value_w + METRIC_GAP
+    assert x - METRIC_GAP <= W - PAD, "la fila de métricas se sale del lienzo"
 
     # Leyenda con los recuentos reales de cada tono.
     parts.append(

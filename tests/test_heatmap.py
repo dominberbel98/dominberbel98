@@ -1,4 +1,5 @@
 import re
+from datetime import date, timedelta
 
 import pytest
 
@@ -104,10 +105,10 @@ def test_no_metric_in_the_stats_row_overflows_the_canvas():
     importado del módulo, nunca repetido como número suelto aquí), y exige
     que ninguna rebase `W - PAD`.
 
-    Con `SLOT_W=164` y el formato largo `"{count} on {date}"` este test
-    falla porque el valor de `best day` (17 caracteres) empieza demasiado a
-    la derecha para caber. Tras estrechar los huecos a `SLOT_W=156` y
-    compactar la fecha a `"{count} · {mm-dd}"` (10 caracteres), pasa.
+    Con el layout derivado del contenido (cada métrica empieza donde acaba
+    la anterior más el hueco entre métricas) el valor de `best day`, con el
+    formato compacto `"{count} · {mm-dd}"`, cabe sin tocar constantes de
+    ancho fijo.
     """
     data = dict(DATA, best_day={"date": "2026-08-17", "count": 47})
     svg = render(data, weeks=53)
@@ -130,6 +131,63 @@ def test_stats_row_still_fits_with_a_three_digit_best_day_count():
         assert right_edge <= theme.WIDTH_FULL - PAD, (
             f"{content!r} en x={x} rebasa el lienzo con un best_day de 3 cifras"
         )
+
+
+def test_no_metric_in_the_stats_row_overlaps_the_next_one():
+    """La propiedad que de verdad importa: ninguna métrica pisa a la siguiente.
+
+    No basta con no salirse del lienzo por la derecha (eso ya lo cubren los
+    dos tests anteriores): con una rejilla de huecos de ancho fijo, un valor
+    puede seguir cabiendo dentro del lienzo y aun así invadir la etiqueta de
+    la métrica siguiente si esta empieza demasiado pronto. Es exactamente lo
+    que le pasó a `active days` (`"149 / 369"`) contra la etiqueta `longest`
+    al estrechar `SLOT_W` de 164 a 156.
+
+    Se ejercita con valores artificialmente largos —un `total` de cinco
+    cifras, una ventana de 369 días (para que `active days` imprima
+    `"149 / 369"`, con tres cifras a cada lado de la barra) y un
+    `best_day.count` de tres cifras— para que la propiedad se siga
+    cumpliendo aunque los datos crezcan, no solo con los del fixture `DATA`
+    de hoy.
+
+    Con el layout de huecos fijos (`SLOT_W`/`VALUE_DX`) este test falla: el
+    valor de `active days` termina más a la derecha de donde empieza la
+    etiqueta `longest`. Con el layout derivado del contenido, cada métrica
+    reserva exactamente el espacio que necesita, así que la separación con
+    la siguiente es siempre positiva.
+    """
+    start = date(2025, 8, 17)
+    days = [
+        {"date": (start + timedelta(days=d)).isoformat(), "count": 0}
+        for d in range(369)
+    ]
+    data = dict(
+        DATA,
+        days=days,
+        total=12345,
+        active_days=149,
+        best_day={"date": "2026-08-17", "count": 999},
+    )
+    svg = render(data, weeks=53)
+    texts = _stat_row_texts(svg)
+    assert len(texts) == 10, "se esperan 5 pares etiqueta/valor en la fila de métricas"
+
+    labels = texts[0::2]
+    values = texts[1::2]
+    for (value_x, value_content), (next_label_x, _next_label) in zip(values, labels[1:]):
+        right_edge = value_x + len(value_content) * CHAR_W
+        gap = next_label_x - right_edge
+        assert gap > 0, (
+            f"{value_content!r} (borde derecho={right_edge:.1f}) choca contra "
+            f"la siguiente etiqueta en x={next_label_x} (hueco={gap:.1f})"
+        )
+
+    last_value_x, last_value_content = values[-1]
+    last_right_edge = last_value_x + len(last_value_content) * CHAR_W
+    assert last_right_edge <= theme.WIDTH_FULL - PAD, (
+        f"la última métrica rebasa el lienzo: borde={last_right_edge:.1f}, "
+        f"límite={theme.WIDTH_FULL - PAD}"
+    )
 
 
 def test_is_full_width(svg):
