@@ -12,7 +12,7 @@ PROFILE = ROOT / "data" / "profile.json"
 OUT = ROOT / "assets" / "projects.svg"
 
 W = theme.WIDTH_FULL   # 840
-H = 220
+H = 236
 PAD = 16
 FIRST_Y = 64
 STEP = 38
