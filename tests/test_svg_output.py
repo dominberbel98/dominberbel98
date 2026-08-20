@@ -55,13 +55,27 @@ def test_every_animation_declares_a_fill_mode(path):
 
     Se comprueba cada declaración `animation:` por separado: un `both` suelto
     en cualquier otra parte del archivo no debe dar el test por bueno.
+
+    La guarda de accesibilidad obligatoria (`animation:none!important` dentro
+    de `@media (prefers-reduced-motion: reduce)`) no es una animación sino un
+    reset que las anula: se ignora explícitamente y no cuenta como la
+    animación real que cada SVG debe declarar.
     """
     import re
 
     text = path.read_text(encoding="utf-8")
     declarations = re.findall(r"animation:([^;}\"]*)", text)
     assert declarations, f"{path.name} no declara ninguna animación"
-    for declaration in declarations:
+
+    real_declarations = [
+        d for d in declarations if re.fullmatch(r"\s*none\s*(!important)?\s*", d) is None
+    ]
+    assert real_declarations, (
+        f"{path.name} solo declara el reset de prefers-reduced-motion, "
+        "ninguna animación real"
+    )
+
+    for declaration in real_declarations:
         assert "both" in declaration or "infinite" in declaration, (
             f"{path.name}: 'animation:{declaration.strip()}' sin fill-mode"
         )
