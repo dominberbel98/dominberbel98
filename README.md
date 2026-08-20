@@ -39,6 +39,6 @@
 
 <div align="center">
 
-*Generado con Python — `scripts/build_all.py`. El heatmap se refresca a diario.*
+*Generado con Python — `python -m scripts.build_all`. El heatmap se refresca a diario.*
 
 </div>
