@@ -35,9 +35,12 @@ def render(profile: dict) -> str:
     parts: list[str] = []
 
     parts.append(
-        f'<text class="ln l0" x="{PAD}" y="30" fill="{theme.GREEN_BRIGHT}" '
+        f'<text class="ln l0" x="{PAD}" y="30" '
         f'font-family="{theme.MONO}" font-size="13">'
-        f'{theme.esc(user)}@{theme.esc(handle)}</text>'
+        f'<tspan fill="{theme.GREEN_BRIGHT}">{theme.esc(user)}</tspan>'
+        f'<tspan fill="{theme.MUTED}">@</tspan>'
+        f'<tspan fill="{theme.AMBER}">{theme.esc(handle)}</tspan>'
+        f'</text>'
     )
     parts.append(
         f'<rect class="ln l1" x="{PAD}" y="40" width="{SIZE - 2 * PAD}" height="1" '
