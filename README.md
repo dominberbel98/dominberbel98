@@ -27,7 +27,7 @@
 
 <br>
 
-<img src="./assets/contrib-heatmap.svg" width="840" alt="Mapa de contribuciones de los últimos seis meses">
+<img src="./assets/contrib-heatmap.svg" width="840" alt="Mapa de contribuciones del último año completo, semana a semana, con el total, los días activos, las rachas y el mejor día">
 
 <br>
 
