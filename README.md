@@ -23,7 +23,7 @@
 
 <br>
 
-<img src="./assets/projects.svg" width="840" alt="Proyectos: agentic-rag-portfolio (RAG en producción sobre Azure Container Apps), tfm-ucm-rag (recomendador turístico, máxima nota, 3ª posición en becas UCM), pump-it-up (top 2907 de más de 18.000), ocr-albaranes (clasificación documental en producción)">
+<img src="./assets/projects.svg" width="840" alt="Proyectos: domingoberbel.com (RAG agéntico, analítica PySpark en vivo y ML en el navegador, sobre Azure), tfm-ucm-rag (recomendador turístico, máxima nota, 3ª posición en becas UCM), pump-it-up (top 2907 de más de 18.000), ocr-albaranes (clasificación documental en producción)">
 
 <br>
 

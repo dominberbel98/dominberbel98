@@ -15,32 +15,83 @@
     "es": "Data Scientist que lleva ML, RAG y agentes de IA a producción."
   },
   "info_card": [
-    { "label": "role", "value": "Data Scientist @ Data Equity" },
-    { "label": "since", "value": "2025-10" },
-    { "label": "location", "value": "Madrid, España" },
-    { "label": "stack", "value": "Python · SQL · PySpark · Azure" },
-    { "label": "focus", "value": "RAG · LLM agents · MLOps" },
-    { "label": "edu", "value": "MSc Data Science — UCM" },
-    { "label": "lang", "value": "ES nativo · EN B2" },
-    { "label": "web", "value": "domingoberbel.com" },
-    { "label": "mail", "value": "info@domingoberbel.com" }
+    {
+      "label": "role",
+      "value": "Data Scientist @ Data Equity"
+    },
+    {
+      "label": "since",
+      "value": "2025-10"
+    },
+    {
+      "label": "location",
+      "value": "Madrid, España"
+    },
+    {
+      "label": "stack",
+      "value": "Python · SQL · PySpark · Azure"
+    },
+    {
+      "label": "focus",
+      "value": "RAG · LLM agents · MLOps"
+    },
+    {
+      "label": "edu",
+      "value": "MSc Data Science — UCM"
+    },
+    {
+      "label": "lang",
+      "value": "ES nativo · EN B2"
+    },
+    {
+      "label": "web",
+      "value": "domingoberbel.com"
+    },
+    {
+      "label": "mail",
+      "value": "info@domingoberbel.com"
+    }
   ],
   "stack": [
-    { "label": "Python", "level": 92 },
-    { "label": "SQL", "level": 88 },
-    { "label": "RAG / LLM", "level": 86 },
-    { "label": "Power BI", "level": 84 },
-    { "label": "Azure", "level": 78 },
-    { "label": "PySpark", "level": 74 },
-    { "label": "Docker", "level": 70 },
-    { "label": "React", "level": 58 }
+    {
+      "label": "Python",
+      "level": 92
+    },
+    {
+      "label": "SQL",
+      "level": 88
+    },
+    {
+      "label": "RAG / LLM",
+      "level": 86
+    },
+    {
+      "label": "Power BI",
+      "level": 84
+    },
+    {
+      "label": "Azure",
+      "level": 78
+    },
+    {
+      "label": "PySpark",
+      "level": 74
+    },
+    {
+      "label": "Docker",
+      "level": 70
+    },
+    {
+      "label": "React",
+      "level": 58
+    }
   ],
   "projects": [
     {
-      "name": "agentic-rag-portfolio",
-      "en": "RAG in production · Azure Container Apps · FastAPI + React",
-      "es": "RAG en producción · Azure Container Apps · FastAPI + React",
-      "url": "https://github.com/dominberbel98/agentic-rag-portfolio"
+      "name": "domingoberbel.com",
+      "en": "Agentic RAG · live PySpark analytics · in-browser ML · Azure",
+      "es": "RAG agéntico · analítica PySpark en vivo · ML en el navegador · Azure",
+      "url": "https://github.com/dominberbel98/domingoberbel.com"
     },
     {
       "name": "tfm-ucm-rag",
@@ -61,5 +112,7 @@
       "url": "https://github.com/dominberbel98/OCR_suministros"
     }
   ],
-  "heatmap": { "weeks": 53 }
+  "heatmap": {
+    "weeks": 53
+  }
 }
