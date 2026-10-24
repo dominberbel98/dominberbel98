@@ -1,6 +1,6 @@
 {
  "handle": "dominberbel98",
- "fetched_at": "2026-10-23T11:43:08+00:00",
+ "fetched_at": "2026-10-24T11:05:51+00:00",
  "days": [
   {
    "date": "2025-10-19",
@@ -1480,17 +1480,21 @@
   },
   {
    "date": "2026-10-23",
+   "count": 1
+  },
+  {
+   "date": "2026-10-24",
    "count": 0
   }
  ],
- "total": 606,
- "active_days": 189,
- "longest_streak": 68,
+ "total": 607,
+ "active_days": 190,
+ "longest_streak": 69,
  "current_streak": 0,
  "best_day": {
   "date": "2026-08-17",
   "count": 47
  },
  "first_date": "2025-10-19",
- "last_date": "2026-10-23"
+ "last_date": "2026-10-24"
 }
