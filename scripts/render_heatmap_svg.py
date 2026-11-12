@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROFILE = ROOT / "data" / "profile.json"
 DATA = ROOT / "data" / "contributions.json"
 OUT = ROOT / "assets" / "contrib-heatmap.svg"
+OUT_MOBILE = ROOT / "assets" / "contrib-heatmap-m.svg"
 
 W = theme.WIDTH_FULL   # 840
 H = 220
@@ -48,6 +49,25 @@ METRIC_GAP = 26        # px entre el valor de una métrica y la etiqueta siguien
 LEGEND_Y = 206
 CHAR_W = 6.6           # avance aproximado por carácter a font-size 11 (MONO)
 CELL_DELAY_MS = 8
+RIPPLE_STEP_MS = 55    # desfase de la onda entre diagonales
+RIPPLE_START_MS = 1500
+MOBILE_WEEKS = 26      # medio año: celdas de 12 px en un lienzo de 420
+
+# Entrada de una vez (pop) + onda en bucle (ripple) que cruza la rejilla en
+# diagonal, para que el panel siga vivo cuando se llega a él con scroll.
+CELL_CSS = (
+    "@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}"
+    "@keyframes ripple{0%,14%,100%{opacity:1}7%{opacity:.3}}"
+    ".c{transform-box:fill-box;transform-origin:center;"
+    "animation:pop 320ms ease-out both,ripple 7s linear infinite}"
+)
+
+
+def cell_delay(col: int, row: int) -> str:
+    """Retardos de las dos animaciones de una celda: pop, ripple."""
+    diagonal = col + row
+    return (f"animation-delay:{diagonal * CELL_DELAY_MS}ms,"
+            f"{RIPPLE_START_MS + diagonal * RIPPLE_STEP_MS}ms")
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -125,10 +145,9 @@ def render(data: dict, weeks: int) -> str:
         x = GRID_X + col * PITCH
         y = GRID_Y + row * PITCH
         colour = theme.HEAT_LEVELS[level(day["count"], th)]
-        delay = (col + row) * CELL_DELAY_MS
         cells.append(
             f'<rect class="c" x="{x}" y="{y}" width="{CELL}" height="{CELL}" rx="2" '
-            f'fill="{colour}" style="animation-delay:{delay}ms"/>'
+            f'fill="{colour}" style="{cell_delay(col, row)}"/>'
         )
         parsed = date.fromisoformat(day["date"])
         key = f"{parsed.year}-{parsed.month}"
@@ -224,12 +243,7 @@ def render(data: dict, weeks: int) -> str:
         f'more · {theme.esc(ranges)}</text>'
     )
 
-    css = "".join([
-        "@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}",
-        ".c{transform-box:fill-box;transform-origin:center;"
-        "animation:pop 320ms ease-out both}",
-        theme.FLICKER_CSS,
-    ])
+    css = "".join([CELL_CSS, theme.FLICKER_CSS])
 
     return "".join([
         theme.svg_open(W, H, f"Contribuciones de GitHub: {data['total']} en el periodo"),
@@ -242,10 +256,97 @@ def render(data: dict, weeks: int) -> str:
     ])
 
 
+def render_mobile(data: dict, weeks: int) -> str:
+    """Variante de 420 px: rejilla del último medio año y métricas en dos
+    columnas. Las cifras son las mismas que en escritorio (ventana `weeks`)."""
+    w = theme.WIDTH_MOBILE
+    full = window(data["days"], weeks)
+    days = window(full, MOBILE_WEEKS)
+    # Umbrales sobre la ventana completa: un mismo recuento pinta el mismo
+    # tono en las dos variantes.
+    th = thresholds([d["count"] for d in full])
+    grid_x, grid_y = 48, 84
+
+    def label(x: float, y: float, content: str, fill: str = theme.MUTED,
+              size: float = 13, weight: int = 400) -> str:
+        return theme.text(x, y, content, fill=fill, size=size, weight=weight)
+
+    parts = [
+        theme.prompt(PAD, 32, "git log --graph", size=15),
+        label(PAD, 52, f"last {len(days) // 7} weeks"),
+    ]
+    cells: list[str] = []
+    seen: set[str] = set()
+    last_label_x = -100.0
+    for i, day in enumerate(days):
+        col, row = divmod(i, 7)
+        x = grid_x + col * PITCH
+        y = grid_y + row * PITCH
+        cells.append(
+            f'<rect class="c" x="{x}" y="{y}" width="{CELL}" height="{CELL}" rx="2" '
+            f'fill="{theme.HEAT_LEVELS[level(day["count"], th)]}" '
+            f'style="{cell_delay(col, row)}"/>'
+        )
+        parsed = date.fromisoformat(day["date"])
+        key = f"{parsed.year}-{parsed.month}"
+        if row == 0 and key not in seen:
+            seen.add(key)
+            # Un mes que empieza a menos de 3 columnas del anterior pisaría
+            # su etiqueta: se omite.
+            if x - last_label_x >= 3 * PITCH:
+                parts.append(label(x, grid_y - 8, MONTHS[parsed.month - 1], size=13))
+                last_label_x = x
+    for row, name in ((1, "Mon"), (3, "Wed"), (5, "Fri")):
+        parts.append(label(PAD, grid_y + row * PITCH + 10, name, size=13))
+    parts.append(f'<g filter="url(#bloom)">{"".join(cells)}</g>')
+
+    stats = [
+        ("total", str(data["total"])),
+        ("active days", f'{data["active_days"]} / {len(full)}'),
+        ("longest", f'{data["longest_streak"]} d'),
+        ("current", f'{data["current_streak"]} d'),
+        ("best day", f'{data["best_day"]["count"]} · {data["best_day"]["date"][5:]}'),
+    ]
+    y = grid_y + 7 * PITCH + 30
+    parts.append(label(PAD, y, f"last {len(full) // 7} weeks"))
+    y += 26
+    for i, (name, value) in enumerate(stats):
+        x = PAD if i % 2 == 0 else w // 2 + 4
+        parts.append(label(x, y, name))
+        parts.append(label(x, y + 20, value, fill=theme.GREEN, size=16, weight=700))
+        if i % 2 == 1:
+            y += 52
+    if len(stats) % 2 == 1:
+        y += 52
+
+    parts.append(label(PAD, y, "less"))
+    swatches_x = PAD + 42
+    for i, colour in enumerate(theme.HEAT_LEVELS):
+        parts.append(
+            f'<rect x="{swatches_x + i * 18}" y="{y - 11}" width="13" height="13" '
+            f'rx="2" fill="{colour}"/>'
+        )
+    parts.append(label(swatches_x + len(theme.HEAT_LEVELS) * 18 + 4, y, "more"))
+    h = y + PAD + 4
+
+    css = "".join([CELL_CSS, theme.FLICKER_CSS])
+    return "".join([
+        theme.svg_open(w, h, f"Contribuciones de GitHub: {data['total']} en el periodo"),
+        theme.defs(),
+        theme.style(css),
+        theme.background(w, h),
+        f'<g class="flick">{"".join(parts)}</g>',
+        theme.scanlines(w, h),
+        theme.svg_close(),
+    ])
+
+
 def main() -> None:
     profile = json.loads(PROFILE.read_text(encoding="utf-8"))
     data = json.loads(DATA.read_text(encoding="utf-8"))
-    OUT.write_text(render(data, profile["heatmap"]["weeks"]), encoding="utf-8")
+    weeks = profile["heatmap"]["weeks"]
+    OUT.write_text(render(data, weeks), encoding="utf-8")
+    OUT_MOBILE.write_text(render_mobile(data, weeks), encoding="utf-8")
     print(f"escrito {OUT.relative_to(ROOT)}: {data['total']} contribuciones")
 
 

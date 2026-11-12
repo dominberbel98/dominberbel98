@@ -57,6 +57,7 @@ def render(matrix: dict, profile: dict) -> str:
     css = "".join([
         "@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}",
         f".row{{animation:wipe {WIPE_MS}ms cubic-bezier(.2,.8,.2,1) both}}",
+        theme.beam_css(SIZE, seconds=6, delay=2),
         theme.FLICKER_CSS,
         *(f".r{i}{{animation-delay:{i * ROW_DELAY_MS}ms}}" for i in range(len(rows))),
     ])
@@ -79,6 +80,7 @@ def render(matrix: dict, profile: dict) -> str:
         theme.style(css),
         theme.background(SIZE, SIZE),
         f'<g class="flick" filter="url(#bloom)">{"".join(body)}</g>',
+        theme.beam(SIZE),
         theme.scanlines(SIZE, SIZE),
         theme.svg_close(),
     ])

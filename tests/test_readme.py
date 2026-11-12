@@ -13,7 +13,8 @@ def test_site_link_appears_before_anything_else():
 
 def test_banner_is_wrapped_in_an_anchor():
     assert re.search(
-        r'<a href="https://domingoberbel\.com">\s*<img src="\./assets/header\.svg"',
+        r'<a href="https://domingoberbel\.com">\s*<picture>\s*<source [^>]+>\s*'
+        r'<img src="\./assets/header\.svg"',
         README,
     )
 
@@ -43,3 +44,18 @@ def test_uses_no_setext_or_atx_headings():
 def test_has_no_inline_style_attributes():
     """GitHub los elimina; si están, es que alguien esperaba que funcionaran."""
     assert "style=" not in README
+
+
+def test_wide_pieces_serve_a_mobile_variant():
+    """Cada pieza de 840 px va en un <picture> con su variante estrecha."""
+    for name in ["header", "stack-bars", "projects", "contrib-heatmap"]:
+        assert re.search(
+            rf'<source media="\(max-width: 600px\)" srcset="\./assets/{name}-m\.svg">'
+            rf'<img src="\./assets/{name}\.svg"',
+            README,
+        ), f"{name} sin variante móvil"
+
+
+def test_uses_no_table():
+    """Una tabla no se apila en móvil: las dos mitades quedaban a 150 px."""
+    assert "<table" not in README

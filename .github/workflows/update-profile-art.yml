@@ -30,4 +30,4 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: refrescar heatmap de contribuciones [skip ci]"
-          file_pattern: "assets/contrib-heatmap.svg data/contributions.json"
+          file_pattern: "assets/contrib-heatmap.svg assets/contrib-heatmap-m.svg data/contributions.json"
