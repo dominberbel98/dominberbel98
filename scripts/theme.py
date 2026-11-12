@@ -44,6 +44,12 @@ MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monos
 
 WIDTH_FULL = 840
 WIDTH_HALF = 420
+# Variante estrecha para móvil. En un teléfono el README mide ~330 px: un SVG
+# de 840 se reduce al 40 % y un texto de 12 px queda en 5 px. Las piezas "-m"
+# se dibujan sobre 420 con cuerpo >= 13, así que en pantalla nunca bajan de
+# ~10 px. El README elige una u otra con <picture> + media query.
+WIDTH_MOBILE = 420
+MIN_MOBILE_FONT = 13
 
 
 def esc(value: object) -> str:
@@ -83,6 +89,16 @@ def defs(extra: str = "") -> str:
         '<feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/>'
         "</feMerge>"
         "</filter>"
+        '<linearGradient id="beamg" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="{GREEN_BRIGHT}" stop-opacity="0"/>'
+        f'<stop offset=".85" stop-color="{GREEN_BRIGHT}" stop-opacity=".09"/>'
+        f'<stop offset="1" stop-color="{GREEN}" stop-opacity=".22"/>'
+        "</linearGradient>"
+        '<linearGradient id="shineg" x1="0" y1="0" x2="1" y2="0">'
+        '<stop offset="0" stop-color="#fff" stop-opacity="0"/>'
+        '<stop offset=".5" stop-color="#fff" stop-opacity=".75"/>'
+        '<stop offset="1" stop-color="#fff" stop-opacity="0"/>'
+        "</linearGradient>"
         f"{extra}"
         "</defs>"
     )
@@ -155,3 +171,55 @@ FLICKER_CSS = (
     "@keyframes flick{0%{opacity:.985}50%{opacity:1}100%{opacity:.99}}"
     ".flick{animation:flick .12s infinite}"
 )
+
+
+# ── Movimiento ambiente ────────────────────────────────────────────────────
+# Las entradas de una sola vez se pierden: el SVG arranca al cargar la página
+# y, cuando el visitante hace scroll hasta la pieza, ya han terminado. Por eso
+# cada panel lleva además un bucle discreto que sigue vivo al llegar a él.
+
+BEAM_H = 70
+
+
+def beam_css(height: int, *, seconds: float = 7, delay: float = 0) -> str:
+    """Haz de barrido de tubo CRT que recorre el panel de arriba abajo."""
+    return (
+        f"@keyframes beam{{from{{transform:translateY(-{BEAM_H}px)}}"
+        f"to{{transform:translateY({height}px)}}}}"
+        f".beam{{animation:beam {seconds}s linear {delay}s infinite}}"
+    )
+
+
+def beam(width: int) -> str:
+    return (
+        f'<rect class="beam" y="-{BEAM_H}" width="{width}" height="{BEAM_H}" '
+        f'fill="url(#beamg)" pointer-events="none"/>'
+    )
+
+
+LED_CSS = (
+    "@keyframes led{0%,100%{opacity:1}50%{opacity:.25}}"
+    ".led{animation:led 1.8s ease-in-out infinite}"
+)
+
+
+def led(cx: float, cy: float, *, r: float = 4, fill: str = GREEN_BRIGHT,
+        delay_ms: int = 0) -> str:
+    """Piloto de estado que late."""
+    return (
+        f'<circle class="led" cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" '
+        f'style="animation-delay:{delay_ms}ms"/>'
+    )
+
+
+def wrap(content: str, max_chars: int) -> list[str]:
+    """Parte un texto en líneas de como mucho `max_chars` caracteres."""
+    import textwrap
+
+    return textwrap.wrap(content, max_chars, break_long_words=False) or [""]
+
+
+def max_chars(width_px: float, size: float) -> int:
+    """Caracteres que caben en `width_px` con la monoespaciada más ancha de la
+    pila (0,62 em de avance; Menlo y DejaVu rondan 0,60)."""
+    return int(width_px / (size * 0.62))

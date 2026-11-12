@@ -7,11 +7,29 @@ ASSETS = sorted(Path("assets").glob("*.svg"))
 MAX_BYTES = 200 * 1024
 
 
-def test_all_six_assets_exist():
+MOBILE = {"header-m.svg", "stack-bars-m.svg", "projects-m.svg", "contrib-heatmap-m.svg"}
+
+
+def test_all_assets_exist():
     assert {p.name for p in ASSETS} == {
         "header.svg", "ascii-portrait.svg", "info-card.svg",
         "stack-bars.svg", "projects.svg", "contrib-heatmap.svg",
-    }
+    } | MOBILE
+
+
+@pytest.mark.parametrize("name", sorted(MOBILE))
+def test_mobile_variant_is_narrow_and_legible(name):
+    """Un README en el móvil mide ~330 px. Las variantes -m se dibujan sobre
+    420 y ningún texto baja del cuerpo mínimo: escalado queda en ~10 px."""
+    import re
+
+    from scripts import theme
+
+    root = ET.parse(Path("assets") / name).getroot()
+    assert root.get("width") == str(theme.WIDTH_MOBILE)
+    text = (Path("assets") / name).read_text(encoding="utf-8")
+    sizes = [float(s) for s in re.findall(r'font-size="([\d.]+)"', text)]
+    assert sizes and min(sizes) >= theme.MIN_MOBILE_FONT, f"{name}: cuerpo {min(sizes)}"
 
 
 @pytest.mark.parametrize("path", ASSETS, ids=lambda p: p.name)

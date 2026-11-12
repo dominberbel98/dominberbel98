@@ -13,10 +13,10 @@ OUT = ROOT / "assets" / "info-card.svg"
 
 SIZE = theme.WIDTH_HALF   # 420
 PAD = 16
-FIRST_ENTRY_Y = 68
-ENTRY_H = 26
+FIRST_ENTRY_Y = 72
+ENTRY_H = 29
 LABEL_X = PAD
-VALUE_X = 104
+VALUE_X = 100
 STAGGER_MS = 80
 
 SWATCHES = [
@@ -35,7 +35,7 @@ def render(profile: dict) -> str:
 
     parts.append(
         f'<text class="ln l0" x="{PAD}" y="30" '
-        f'font-family="{theme.MONO}" font-size="13">'
+        f'font-family="{theme.MONO}" font-size="15" font-weight="700">'
         f'<tspan fill="{theme.GREEN_BRIGHT}">{theme.esc(user)}</tspan>'
         f'<tspan fill="{theme.MUTED}">@</tspan>'
         f'<tspan fill="{theme.AMBER}">{theme.esc(handle)}</tspan>'
@@ -51,29 +51,29 @@ def render(profile: dict) -> str:
         idx = i + 2
         parts.append(
             f'<text class="ln l{idx}" x="{LABEL_X}" y="{y}" fill="{theme.AMBER}" '
-            f'font-family="{theme.MONO}" font-size="12">{theme.esc(entry["label"])}</text>'
+            f'font-family="{theme.MONO}" font-size="14">{theme.esc(entry["label"])}</text>'
         )
         parts.append(
             f'<text class="ln l{idx}" x="{VALUE_X}" y="{y}" fill="{theme.GREEN}" '
-            f'font-family="{theme.MONO}" font-size="12">{theme.esc(entry["value"])}</text>'
+            f'font-family="{theme.MONO}" font-size="14">{theme.esc(entry["value"])}</text>'
         )
 
     head_idx = len(entries) + 2
     parts.append(
-        f'<text class="ln l{head_idx}" x="{PAD}" y="316" fill="{theme.GREEN}" '
-        f'font-family="{theme.MONO}" font-size="10">'
+        f'<text class="ln l{head_idx}" x="{PAD}" y="338" fill="{theme.GREEN}" '
+        f'font-family="{theme.MONO}" font-size="10.4">'
         f'{theme.esc(profile["headline"]["en"])}</text>'
     )
     parts.append(
-        f'<text class="ln l{head_idx + 1}" x="{PAD}" y="333" fill="{theme.MUTED}" '
-        f'font-family="{theme.MONO}" font-size="10">'
+        f'<text class="ln l{head_idx + 1}" x="{PAD}" y="355" fill="{theme.MUTED}" '
+        f'font-family="{theme.MONO}" font-size="10.4">'
         f'{theme.esc(profile["headline"]["es"])}</text>'
     )
 
     parts.append(f'<g class="ln l{head_idx + 2}">')
     for i, colour in enumerate(SWATCHES):
         parts.append(
-            f'<rect class="sw" x="{PAD + i * 24}" y="352" '
+            f'<rect class="sw" x="{PAD + i * 24}" y="378" '
             f'width="18" height="18" fill="{colour}"/>'
         )
     parts.append("</g>")
@@ -84,6 +84,7 @@ def render(profile: dict) -> str:
         "to{opacity:1;transform:translateX(0)}}",
         ".ln{animation:enter 420ms cubic-bezier(.2,.8,.2,1) both}",
         *(f".l{i}{{animation-delay:{i * STAGGER_MS}ms}}" for i in range(total_lines)),
+        theme.beam_css(SIZE, seconds=8, delay=4),
         theme.FLICKER_CSS,
     ])
 
@@ -93,6 +94,7 @@ def render(profile: dict) -> str:
         theme.style(css),
         theme.background(SIZE, SIZE),
         f'<g class="flick" filter="url(#bloom)">{"".join(parts)}</g>',
+        theme.beam(SIZE),
         theme.scanlines(SIZE, SIZE),
         theme.svg_close(),
     ])
