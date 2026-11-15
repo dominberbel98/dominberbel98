@@ -1,35 +1,7 @@
 {
  "handle": "dominberbel98",
- "fetched_at": "2026-11-14T13:35:28+00:00",
+ "fetched_at": "2026-11-15T13:58:16+00:00",
  "days": [
-  {
-   "date": "2025-11-09",
-   "count": 0
-  },
-  {
-   "date": "2025-11-10",
-   "count": 0
-  },
-  {
-   "date": "2025-11-11",
-   "count": 2
-  },
-  {
-   "date": "2025-11-12",
-   "count": 2
-  },
-  {
-   "date": "2025-11-13",
-   "count": 0
-  },
-  {
-   "date": "2025-11-14",
-   "count": 0
-  },
-  {
-   "date": "2025-11-15",
-   "count": 0
-  },
   {
    "date": "2025-11-16",
    "count": 0
@@ -1484,17 +1456,21 @@
   },
   {
    "date": "2026-11-14",
+   "count": 1
+  },
+  {
+   "date": "2026-11-15",
    "count": 0
   }
  ],
- "total": 669,
- "active_days": 201,
- "longest_streak": 90,
+ "total": 666,
+ "active_days": 200,
+ "longest_streak": 91,
  "current_streak": 0,
  "best_day": {
   "date": "2026-08-17",
   "count": 47
  },
- "first_date": "2025-11-09",
- "last_date": "2026-11-14"
+ "first_date": "2025-11-16",
+ "last_date": "2026-11-15"
 }
