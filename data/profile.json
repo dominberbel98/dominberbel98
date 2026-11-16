@@ -11,8 +11,8 @@
     "linkedin": "linkedin.com/in/domingo-berbel"
   },
   "headline": {
-    "en": "Data Scientist shipping ML, RAG and AI agents to production.",
-    "es": "Data Scientist que lleva ML, RAG y agentes de IA a producción."
+    "en": "Data pipelines, RAG and AI agents shipped to production.",
+    "es": "Pipelines de datos, RAG y agentes de IA llevados a producción."
   },
   "info_card": [
     {
@@ -33,7 +33,7 @@
     },
     {
       "label": "focus",
-      "value": "RAG · LLM agents · MLOps"
+      "value": "ETL · pipelines · RAG · agents"
     },
     {
       "label": "edu",
@@ -89,8 +89,8 @@
   "projects": [
     {
       "name": "domingoberbel.com",
-      "en": "Agentic RAG · live PySpark analytics · in-browser ML · Azure",
-      "es": "RAG agéntico · analítica PySpark en vivo · ML en el navegador · Azure",
+      "en": "PySpark batch pipeline · agentic RAG · FastAPI on Azure",
+      "es": "Pipeline batch en PySpark · RAG agéntico · FastAPI en Azure",
       "url": "https://github.com/dominberbel98/domingoberbel.com"
     },
     {
